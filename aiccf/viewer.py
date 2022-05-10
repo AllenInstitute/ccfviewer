@@ -144,7 +144,9 @@ class AtlasViewer(QtGui.QWidget):
         axis = self.atlas_view.display_ctrl.params['Orientation']
 
         # find real lims id
-        lims_str_id = (key for key, value in self.label._info[-1]['ai_ontology_map'] if value == mouse_point[1]).next()
+        ai_ontology_map = self.label._info[-1]['ai_ontology_map']
+        match_index = np.argwhere(ai_ontology_map[:,1] == mouse_point[1])[0, 0]
+        lims_str_id = ai_ontology_map[match_index, 0]
         
         # compute the 4x4 transform matrix
         a = self.scale_point_to_CCF(self.atlas_view.line_roi.origin)
