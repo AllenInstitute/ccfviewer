@@ -525,7 +525,9 @@ class RulerROI(pg.ROI):
         p.resetTransform()
 
         txt = pg.siFormat(length, suffix='m') + '\n%0.1f deg' % angle + '\n%0.1f deg' % self.ac_angle
-        p.drawText(QtCore.QRectF(pos.x() - 50, pos.y() - 50, 100, 100), QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter, txt)
+        opts = pg.QtGui.QTextOption()
+        opts.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+        p.drawText(QtCore.QRectF(pos.x() - 50, pos.y() - 50, 100, 100), txt, opts)
 
     def boundingRect(self):
         r = pg.ROI.boundingRect(self)
