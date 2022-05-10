@@ -24,9 +24,9 @@ More information about the atlas data and ontology files is available at:
 Requirements
 ------------
 
-* Python 2.7
-* PyQt4
-* PyQtGraph >= 0.11 (sorry, 0.10 will not work)
+* Python 3+
+* PyQt5
+* PyQtGraph
 * numpy
 * nrrd
 * h5py 
