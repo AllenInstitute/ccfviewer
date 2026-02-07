@@ -3,14 +3,13 @@ import json
 from collections import OrderedDict
 import numpy as np
 import pyqtgraph as pg
-import pyqtgraph.metaarray as metaarray
-from pyqtgraph.Qt import QtGui, QtCore
+from . import qt
 
 from aiccf.ui import AtlasDisplayCtrl, LabelTree, AtlasSliceView
 from aiccf import points_to_aff
 
 
-class AtlasViewer(QtGui.QWidget):
+class AtlasViewer(qt.QWidget):
     """Class that assembles all of the available UI elements into
     one widget.
     """
@@ -18,17 +17,17 @@ class AtlasViewer(QtGui.QWidget):
         self.atlas = None
         self.label = None
 
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QGridLayout()
+        qt.QWidget.__init__(self, parent)
+        self.layout = qt.QGridLayout()
         self.setLayout(self.layout)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0,0,0,0)
 
-        self.splitter = QtGui.QSplitter()
+        self.splitter = qt.QSplitter()
         self.layout.addWidget(self.splitter, 0, 0)
 
-        self.view_widget = QtGui.QWidget()
-        self.view_layout = QtGui.QGridLayout()
+        self.view_widget = qt.QWidget()
+        self.view_layout = qt.QGridLayout()
         self.view_widget.setLayout(self.view_layout)
         self.view_layout.setSpacing(0)
         self.view_layout.setContentsMargins(0,0,0,0)
@@ -63,29 +62,29 @@ class AtlasViewer(QtGui.QWidget):
         self.view_layout.addWidget(self.atlas_view.angle_slider, 3, 0)
         self.view_layout.addWidget(self.atlas_view.lut, 0, 1, 3, 1)
 
-        self.clipboard = QtGui.QApplication.clipboard()
+        self.clipboard = qt.QApplication.clipboard()
         
-        QtGui.QShortcut(QtGui.QKeySequence("Alt+Up"), self, self.slider_up)
-        QtGui.QShortcut(QtGui.QKeySequence("Alt+Down"), self, self.slider_down)
-        QtGui.QShortcut(QtGui.QKeySequence("Alt+Left"), self, self.tilt_left)
-        QtGui.QShortcut(QtGui.QKeySequence("Alt+Right"), self, self.tilt_right)
-        QtGui.QShortcut(QtGui.QKeySequence("Alt+1"), self, self.move_left)
-        QtGui.QShortcut(QtGui.QKeySequence("Alt+2"), self, self.move_right)
+        qt.QShortcut(qt.QKeySequence("Alt+Up"), self, self.slider_up)
+        qt.QShortcut(qt.QKeySequence("Alt+Down"), self, self.slider_down)
+        qt.QShortcut(qt.QKeySequence("Alt+Left"), self, self.tilt_left)
+        qt.QShortcut(qt.QKeySequence("Alt+Right"), self, self.tilt_right)
+        qt.QShortcut(qt.QKeySequence("Alt+1"), self, self.move_left)
+        qt.QShortcut(qt.QKeySequence("Alt+2"), self, self.move_right)
 
         self.atlas_view.mouseHovered.connect(self.mouseHovered)
         self.atlas_view.mouseClicked.connect(self.mouseClicked)
         
-        self.statusLabel = QtGui.QLabel()
+        self.statusLabel = qt.QLabel()
         self.layout.addWidget(self.statusLabel, 1, 0, 1, 1)
         self.statusLabel.setFixedHeight(30)
 
-        self.pointLabel = QtGui.QLabel()
+        self.pointLabel = qt.QLabel()
         self.layout.addWidget(self.pointLabel, 2, 0, 1, 1)
         self.pointLabel.setFixedHeight(30)
 
-        self.ctrl = QtGui.QWidget(parent=self)
+        self.ctrl = qt.QWidget(parent=self)
         self.splitter.addWidget(self.ctrl)
-        self.ctrl_layout = QtGui.QVBoxLayout()
+        self.ctrl_layout = qt.QVBoxLayout()
         self.ctrl.setLayout(self.ctrl_layout)
 
         self.ctrl_layout.addWidget(self.atlas_view.display_ctrl)
@@ -306,10 +305,10 @@ class AtlasViewer(QtGui.QWidget):
         return p1, p2
 
     def slider_up(self):
-        self.atlas_view.angle_slider.triggerAction(QtGui.QAbstractSlider.SliderSingleStepAdd)
+        self.atlas_view.angle_slider.triggerAction(qt.QAbstractSlider.SliderSingleStepAdd)
         
     def slider_down(self):
-        self.atlas_view.angle_slider.triggerAction(QtGui.QAbstractSlider.SliderSingleStepSub)
+        self.atlas_view.angle_slider.triggerAction(qt.QAbstractSlider.SliderSingleStepSub)
         
     def tilt_left(self):
         self.atlas_view.line_roi.rotate(1)
@@ -338,22 +337,22 @@ class AtlasViewer(QtGui.QWidget):
 
     
 
-class CoordinatesCtrl(QtGui.QWidget):
-    coordinateSubmitted = QtCore.Signal()
+class CoordinatesCtrl(qt.QWidget):
+    coordinateSubmitted = qt.Signal()
     
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QGridLayout()
+        qt.QWidget.__init__(self, parent)
+        self.layout = qt.QGridLayout()
         self.setLayout(self.layout)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.atlas_viewer = parent
         
-        self.line = QtGui.QLineEdit(self)
+        self.line = qt.QLineEdit(self)
         self.line.returnPressed.connect(self.set_coordinate)
         self.layout.addWidget(self.line, 0, 0)
 
-        self.btn = QtGui.QPushButton('Set Coordinate', self)
+        self.btn = qt.QPushButton('Set Coordinate', self)
         self.layout.addWidget(self.btn, 1, 0)
         self.btn.clicked.connect(self.set_coordinate)
     
@@ -404,15 +403,15 @@ class Target(pg.GraphicsObject):
             # too slow!
             w = self.pixelLength(pg.Point(1, 0))
             if w is None:
-                return QtCore.QRectF()
+                return qt.QRectF()
             h = self.pixelLength(pg.Point(0, 1))
-            # o = self.mapToScene(QtCore.QPointF(0, 0))
-            # w = abs(1.0 / (self.mapToScene(QtCore.QPointF(1, 0)) - o).x())
-            # h = abs(1.0 / (self.mapToScene(QtCore.QPointF(0, 1)) - o).y())
+            # o = self.mapToScene(qt.QPointF(0, 0))
+            # w = abs(1.0 / (self.mapToScene(qt.QPointF(1, 0)) - o).x())
+            # h = abs(1.0 / (self.mapToScene(qt.QPointF(0, 1)) - o).y())
             self._px = (w, h)
             w *= 21
             h *= 21
-            self._bounds = QtCore.QRectF(-w, -h, w*2, h*2)
+            self._bounds = qt.QRectF(-w, -h, w*2, h*2)
         return self._bounds
 
     def viewTransformChanged(self):
@@ -424,7 +423,7 @@ class Target(pg.GraphicsObject):
         px, py = self._px
         w = 4 * px
         h = 4 * py
-        r = QtCore.QRectF(-w, -h, w*2, h*2)
+        r = qt.QRectF(-w, -h, w*2, h*2)
         p.setPen(pg.mkPen(self.color))
         p.setBrush(pg.mkBrush(0, 0, 255, 100))
         p.drawEllipse(r)
@@ -434,14 +433,14 @@ class Target(pg.GraphicsObject):
 
 def displayError(error):
     print(error)
-    err = QtGui.QErrorMessage()
+    err = qt.QErrorMessage()
     err.showMessage(error)
     err.exec_()
 
 
 def displayMessage(message):
-    box = QtGui.QMessageBox()
-    box.setIcon(QtGui.QMessageBox.Information)
+    box = qt.QMessageBox()
+    box.setIcon(qt.QMessageBox.Information)
     box.setText(message)
-    box.setStandardButtons(QtGui.QMessageBox.Ok)
+    box.setStandardButtons(qt.QMessageBox.Ok)
     box.exec_()

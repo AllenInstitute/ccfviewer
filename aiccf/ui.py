@@ -1,7 +1,7 @@
 import os, sys
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtGui, QtCore
+from . import qt
 import pyqtgraph.functions as fn
 from .signal import SignalBlock
 
@@ -11,7 +11,7 @@ else:
     from urllib import urlopen
 
 
-class AtlasSliceView(QtCore.QObject):
+class AtlasSliceView(qt.QObject):
     """A collection of user interface elements bound together:
     
     * One AtlasImageItem displaying an orthogonal view of the atlas
@@ -26,13 +26,13 @@ class AtlasSliceView(QtCore.QObject):
     any top-level layout. 
     """
     
-    sig_slice_changed = QtCore.Signal()  # slice plane changed
-    sig_image_changed = QtCore.Signal()  # orthogonal image changed
-    mouseHovered = QtCore.Signal(object)
-    mouseClicked = QtCore.Signal(object)
+    sig_slice_changed = qt.Signal()  # slice plane changed
+    sig_image_changed = qt.Signal()  # orthogonal image changed
+    mouseHovered = qt.Signal(object)
+    mouseClicked = qt.Signal(object)
     
     def __init__(self):
-        QtCore.QObject.__init__(self)
+        qt.QObject.__init__(self)
 
         self.scale = None
         self.interpolate = True
@@ -45,10 +45,10 @@ class AtlasSliceView(QtCore.QObject):
         self.line_roi = RulerROI([.005, 0], [.008, 0], angle=90, pen=(0, 9), movable=False)
         self.line_roi.sigRegionChanged.connect(self.update_slice_image)
 
-        self.zslider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.zslider = qt.QSlider(qt.Qt.Horizontal)
         self.zslider.valueChanged.connect(self.update_ortho_image)
 
-        self.angle_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.angle_slider = qt.QSlider(qt.Qt.Horizontal)
         self.angle_slider.setRange(-45, 45)
         self.angle_slider.valueChanged.connect(self.angle_slider_changed)
         
@@ -249,20 +249,20 @@ class AtlasDisplayCtrl(pg.parametertree.ParameterTree):
         self.setHeaderHidden(True)
 
 
-class LabelTree(QtGui.QWidget):
-    labels_changed = QtCore.Signal()
+class LabelTree(qt.QWidget):
+    labels_changed = qt.Signal()
 
     def __init__(self, parent=None):
         self._block_signals = False
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QGridLayout()
+        qt.QWidget.__init__(self, parent)
+        self.layout = qt.QGridLayout()
         self.setLayout(self.layout)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0,0,0,0)
 
-        self.tree = QtGui.QTreeWidget(self)
+        self.tree = qt.QTreeWidget(self)
         self.layout.addWidget(self.tree, 0, 0)
-        self.tree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+        self.tree.header().setSectionResizeMode(qt.QHeaderView.ResizeToContents)
         self.tree.headerItem().setText(0, "id")
         self.tree.headerItem().setText(1, "name")
         self.tree.headerItem().setText(2, "color")
@@ -271,11 +271,11 @@ class LabelTree(QtGui.QWidget):
         self.checked = set()
         self.tree.itemChanged.connect(self.item_change)
 
-        self.layer_btn = QtGui.QPushButton('Color by cortical layer')
+        self.layer_btn = qt.QPushButton('Color by cortical layer')
         self.layout.addWidget(self.layer_btn, 1, 0)
         self.layer_btn.clicked.connect(self.color_by_layer)
 
-        self.reset_btn = QtGui.QPushButton('Reset colors')
+        self.reset_btn = qt.QPushButton('Reset colors')
         self.layout.addWidget(self.reset_btn, 2, 0)
         self.reset_btn.clicked.connect(self.reset_colors)
 
@@ -291,9 +291,9 @@ class LabelTree(QtGui.QWidget):
         self.labels_changed.emit()
 
     def add_label(self, id, parent, name, acronym, color):
-        item = QtGui.QTreeWidgetItem([acronym.decode(), name.decode(), ''])
-        item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
-        item.setCheckState(0, QtCore.Qt.Unchecked)
+        item = qt.QTreeWidgetItem([acronym.decode(), name.decode(), ''])
+        item.setFlags(item.flags() | qt.Qt.ItemIsUserCheckable)
+        item.setCheckState(0, qt.Qt.Unchecked)
 
         if parent in self.labels_by_id:
             root = self.labels_by_id[parent]['item']
@@ -302,8 +302,11 @@ class LabelTree(QtGui.QWidget):
 
         root.addChild(item)
 
-        btn = pg.ColorButton(color=pg.mkColor(color.decode()))
-        btn.defaultColor = color.decode()
+        color_str = color.decode()
+        if not color_str.startswith('#'):
+            color_str = '#' + color_str
+        btn = pg.ColorButton(color=pg.mkColor(color_str))
+        btn.defaultColor = color_str
         btn.id = id
         self.tree.setItemWidget(item, 2, btn)
 
@@ -314,7 +317,7 @@ class LabelTree(QtGui.QWidget):
         btn.sigColorChanged.connect(self.item_color_changed)
 
     def item_change(self, item, col):
-        checked = item.checkState(0) == QtCore.Qt.Checked
+        checked = item.checkState(0) == qt.Qt.Checked
         with SignalBlock(self.tree.itemChanged, self.item_change):
             self.check_recursive(item, checked)
             
@@ -324,11 +327,11 @@ class LabelTree(QtGui.QWidget):
     def check_recursive(self, item, checked):
         if checked:
             self.checked.add(item.id)
-            item.setCheckState(0, QtCore.Qt.Checked)
+            item.setCheckState(0, qt.Qt.Checked)
         else:
             if item.id in self.checked:
                 self.checked.remove(item.id)
-            item.setCheckState(0, QtCore.Qt.Unchecked)
+            item.setCheckState(0, qt.Qt.Unchecked)
 
         for i in range(item.childCount()):
             self.check_recursive(item.child(i), checked)
@@ -360,7 +363,7 @@ class LabelTree(QtGui.QWidget):
     def color_by_layer(self, root=None):
         try:
             unblock = False
-            if not isinstance(root, pg.QtGui.QTreeWidgetItem):
+            if not isinstance(root, qt.QTreeWidgetItem):
                 self.blockSignals(True)
                 unblock = True
                 root = self.labels_by_acronym[b'Isocortex']['item']
@@ -399,17 +402,17 @@ class LabelTree(QtGui.QWidget):
         return '[%d]' % id + ' > '.join(descr) + "  :  " + name
 
 
-class AtlasImageItem(QtGui.QGraphicsItemGroup):
-    class SignalProxy(QtCore.QObject):
-        mouseHovered = QtCore.Signal(object)  # id
-        mouseClicked = QtCore.Signal(object)  # id
+class AtlasImageItem(qt.QGraphicsItemGroup):
+    class SignalProxy(qt.QObject):
+        mouseHovered = qt.Signal(object)  # id
+        mouseClicked = qt.Signal(object)  # id
 
     def __init__(self):
         self._sigprox = AtlasImageItem.SignalProxy()
         self.mouseHovered = self._sigprox.mouseHovered
         self.mouseClicked = self._sigprox.mouseClicked
 
-        QtGui.QGraphicsItemGroup.__init__(self)
+        qt.QGraphicsItemGroup.__init__(self)
         self.atlas_img = pg.ImageItem(levels=[0,1])
         self.label_img = pg.ImageItem()
         self.atlas_img.setParentItem(self)
@@ -426,7 +429,7 @@ class AtlasImageItem(QtGui.QGraphicsItemGroup):
         self.atlas_data = atlas
         if scale is not None:
             self.resetTransform()
-            self.scale(*scale)
+            self.setScale(scale[0])
         self.atlas_img.setImage(self.atlas_data, autoLevels=False)
         self.label_img.setImage(self.label_data, autoLevels=False)  
 
@@ -434,7 +437,7 @@ class AtlasImageItem(QtGui.QGraphicsItemGroup):
         self.label_img.setLookupTable(lut)
 
     def set_overlay(self, overlay):
-        mode = getattr(QtGui.QPainter, 'CompositionMode_' + overlay)
+        mode = getattr(qt.QPainter, 'CompositionMode_' + overlay)
         self.label_img.setCompositionMode(mode)
 
     def set_label_opacity(self, o):
@@ -471,7 +474,7 @@ class RulerROI(pg.ROI):
     ============== =============================================================
     **Arguments**
     positions      (list of two length-2 sequences) 
-    \**args        All extra keyword arguments are passed to ROI()
+    **args         All extra keyword arguments are passed to ROI()
     ============== =============================================================
     """
     
@@ -487,7 +490,7 @@ class RulerROI(pg.ROI):
         self.addTranslateHandle([0.5, 0.5])
         self.addFreeHandle([0, 1], [0, 0])  
         self.addFreeHandle([0, 0], [0, 0])
-        self.newRoi = pg.ROI((0, 0), [1, 5], parent=self, pen=pg.mkPen('w', style=QtCore.Qt.DotLine))
+        self.newRoi = pg.ROI((0, 0), [1, 5], parent=self, pen=pg.mkPen('w', style=qt.Qt.DotLine))
 
     def paint(self, p, *args):
         pg.ROI.paint(self, p, *args)
@@ -525,9 +528,9 @@ class RulerROI(pg.ROI):
         p.resetTransform()
 
         txt = pg.siFormat(length, suffix='m') + '\n%0.1f deg' % angle + '\n%0.1f deg' % self.ac_angle
-        opts = pg.QtGui.QTextOption()
-        opts.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-        p.drawText(QtCore.QRectF(pos.x() - 50, pos.y() - 50, 100, 100), txt, opts)
+        opts = qt.QTextOption()
+        opts.setAlignment(qt.Qt.AlignCenter | qt.Qt.AlignVCenter)
+        p.drawText(qt.QRectF(pos.x() - 50, pos.y() - 50, 100, 100), txt, opts)
 
     def boundingRect(self):
         r = pg.ROI.boundingRect(self)
@@ -624,12 +627,12 @@ class RulerROI(pg.ROI):
             return self.ac_angle
 
 
-class AtlasResolutionDialog(QtGui.QDialog):
+class AtlasResolutionDialog(qt.QDialog):
     def __init__(self, resolutions, cached):
-        QtGui.QDialog.__init__(self)
+        qt.QDialog.__init__(self)
         self.setWindowTitle("Select CCF resolution to download")
         self.resize(400, 200)
-        self.layout = QtGui.QGridLayout()
+        self.layout = qt.QGridLayout()
         self.setLayout(self.layout)
         self.radios = {}
         for i,res in enumerate(resolutions):
@@ -637,22 +640,22 @@ class AtlasResolutionDialog(QtGui.QDialog):
                 extra = " (already cached)"
             else:
                 extra = ""
-            r = QtGui.QRadioButton("%d um%s" % (res, extra))
+            r = qt.QRadioButton("%d um%s" % (res, extra))
             self.layout.addWidget(r, i, 0, 1, 2)
             self.radios[res] = r
             r.resolution = res
-        self.ok_btn = QtGui.QPushButton('Download')
+        self.ok_btn = qt.QPushButton('Download')
         self.layout.addWidget(self.ok_btn, 4, 0)
-        self.cancel_btn = QtGui.QPushButton('Cancel')
+        self.cancel_btn = qt.QPushButton('Cancel')
         self.layout.addWidget(self.cancel_btn, 4, 1)
         self.ok_btn.clicked.connect(self.ok_clicked)
         self.cancel_btn.clicked.connect(self.reject)
         for r in self.radios.values():
             r.toggled.connect(self.ok_btn.setEnabled)
 
-    def exec_(self):
+    def exec(self):
         self.ok_btn.setEnabled(False)
-        QtGui.QDialog.exec_(self)
+        qt.QDialog.exec(self)
 
     def selected_resolution(self):
         for r in self.radios.values():

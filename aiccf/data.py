@@ -2,8 +2,8 @@ import os, sys, json
 from collections import OrderedDict
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import metaarray
-from pyqtgraph.Qt import QtGui, QtCore
+from MetaArray import MetaArray
+from . import qt
 from .ui import AtlasResolutionDialog, download
 
 
@@ -118,13 +118,13 @@ class CCFAtlasData(object):
         """Load a MetaArray-format atlas image file.
         """
         filename = self._image_cache_file
-        self.image = metaarray.MetaArray(file=filename, readAllData=True)
+        self.image = MetaArray(file=filename, readAllData=True)
         
     def load_label_cache(self):
         """Load a MetaArray-format atlas label file.
         """
         filename = self._label_cache_file
-        self.label = metaarray.MetaArray(file=filename, readAllData=True)
+        self.label = MetaArray(file=filename, readAllData=True)
         self.ontology = self.label._info[-1]['ontology']
         
     def ccf_transform(self):
@@ -168,7 +168,7 @@ def read_nrrd_atlas(nrrd_file):
         {'name': 'right', 'values': np.arange(data.shape[2]) * vxsize, 'units': 'm'},
         {'vxsize': vxsize}
     ]
-    ma = metaarray.MetaArray(data, info=info)
+    ma = MetaArray(data, info=info)
     return ma
 
 
@@ -193,7 +193,7 @@ def read_nrrd_labels(nrrd_file, ontology_file):
 
     with pg.ProgressDialog("Loading annotation file...", 0, 5, wait=0, nested=True) as dlg:
         print("Loading annotation file...")
-        pg.QtGui.QApplication.processEvents()
+        qt.processEvents()
         # Read ontology and convert to flat table
         onto = json.load(open(ontology_file, 'rb'))
         onto = parse_ontology(onto['msg'][0])
@@ -233,7 +233,7 @@ def read_nrrd_labels(nrrd_file, ontology_file):
         inds.add(i)
    
     with pg.ProgressDialog("Remapping annotations to 16-bit (please be patient with me; this can take several minutes) ...", 0, (~mask).sum(), wait=0, nested=True) as dlg:
-        pg.QtGui.QApplication.processEvents()
+        qt.processEvents()
         for i in u[~mask]:
             while next_id in inds:
                 next_id -= 1
@@ -258,7 +258,7 @@ def read_nrrd_labels(nrrd_file, ontology_file):
         {'name': 'right', 'values': np.arange(data.shape[2]) * vxsize, 'units': 'm'},
         {'vxsize': vxsize, 'ai_ontology_map': mapping, 'ontology': ontology}
     ]
-    ma = metaarray.MetaArray(data, info=info)
+    ma = MetaArray(data, info=info)
     return ma
 
 
